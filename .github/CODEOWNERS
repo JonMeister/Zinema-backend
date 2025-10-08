@@ -1,0 +1,7 @@
+# --- CODEOWNERS ---
+
+# Archivos raíz
+/*      @jonmeister     @ruizisabella
+
+# Backend
+#/backend/*  @backend-dev
