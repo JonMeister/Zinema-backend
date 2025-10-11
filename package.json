@@ -1,0 +1,24 @@
+{
+  "name": "zinema-backend",
+  "version": "1.0.0",
+  "description": "Backend: Plataforma web de streaming que permite explorar, reproducir y valorar películas. Ofrece gestión de cuentas, favoritos, calificaciones, comentarios y subtítulos, brindando una experiencia accesible, segura y adaptable a distintos dispositivos.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JonMeister/Zinema-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JonMeister/Zinema-backend/issues"
+  },
+  "homepage": "https://github.com/JonMeister/Zinema-backend#readme",
+  "dependencies": {
+    "typescript": "^5.9.3"
+  }
+}
