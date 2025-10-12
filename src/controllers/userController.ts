@@ -206,6 +206,42 @@ export class UserController {
       }
     }
   }
+
+  /**
+   * Deletes the profile of the authenticated user.
+   *
+   * Retrieves the user ID from the decoded JWT token (`req.user.id`) and
+   * deletes the user's document from the database.
+   *
+   * @async
+   * @param {import("express").Request} req - Express request object.
+   * @param {import("express").Response} res - Express response object.
+   * @returns {Promise<void>} Sends a JSON response with a success message or an error.
+   */
+  async deleteUser(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user!.id;
+
+      const user = await this.dao.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+
+        return;
+      }
+
+      await this.dao.delete(userId);
+
+      res.status(200).json({
+        message: "Perfil exitosamente borrado",
+      });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Delete user error: " + err.message)
+
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  }
 }
 
 /**

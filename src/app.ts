@@ -30,9 +30,6 @@ app.use("/api/", routes);
  */
 app.get("/", (req: Request, res: Response) => res.send("Server is running"));
 
-
-const PORT = process.env.PORT || 3000;
-
 /**
  * Start the server 
 */

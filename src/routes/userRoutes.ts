@@ -34,6 +34,10 @@ router.put("/updateUser", authenticateToken, (req, res) =>
   userController.updateUser(req, res)
 );
 
+router.delete("/deleteUser", authenticateToken, (req, res) =>
+  userController.deleteUser(req, res)
+);
+
 /**
  *  * Export the router instance to be mounted in the main routes file.
 */

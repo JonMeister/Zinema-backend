@@ -55,3 +55,11 @@ Authorization: Bearer {{TOKEN}}
   "firstName": "Jhorman",
   "lastName": "Gomez"
 }
+
+
+### 
+
+DELETE {{BASE_URL}}/users/deleteUser HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
