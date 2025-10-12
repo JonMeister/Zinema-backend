@@ -1,9 +1,9 @@
-import mongoose, { Document } from "mongoose";
+import mongoose from "mongoose";
 
 /**
  * Interface representing a User document in MongoDB.
  */
-export interface IUser extends Document {
+export interface IUser {
   firstName: string;
   lastName: string;
   age: number;
