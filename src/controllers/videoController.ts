@@ -78,7 +78,9 @@ export class VideoController {
   async getVideoInfoId(req: AuthenticatedRequest, res: Response) { 
     try { 
       const client = createClient(process.env.PEXELS_API_KEY as string); 
-      const id = req.params.id; const data = await client.videos.show({ id: id }); 
+      const id = req.params.id; 
+
+      const data = await client.videos.show({ id: id }); 
 
       res.status(200).json(data); 
     } catch (err: any) { 
