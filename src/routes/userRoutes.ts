@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { userController } from "../controllers/userController";
+import { authenticateToken } from "../utils/auth";
 
 const router = Router();
 
@@ -24,6 +25,14 @@ router.post("/register", (req, res) => userController.registerUser(req, res));
  * @access Public
 */
 router.post("/login", (req, res) => userController.loginUser(req, res));
+
+router.get("/getUser", authenticateToken, (req, res) =>
+  userController.getUser(req, res)
+);
+
+router.put("/updateUser", authenticateToken, (req, res) =>
+  userController.updateUser(req, res)
+);
 
 /**
  *  * Export the router instance to be mounted in the main routes file.
