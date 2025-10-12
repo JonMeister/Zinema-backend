@@ -16,11 +16,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 /**
- * Initialize database connection
- */
-connectDB();
-
-/**
  * Mount the API routes
  */
 app.use("/api/", routes);
@@ -30,9 +25,6 @@ app.use("/api/", routes);
  */
 app.get("/", (req: Request, res: Response) => res.send("Server is running"));
 
-
-const PORT = process.env.PORT || 3000;
-
 /**
  * Start the server 
 */
@@ -40,6 +32,7 @@ const startServer = async () => {
   try {
     await connectDB();
     const PORT = process.env.PORT || 3000;
+
     app.listen(PORT, () => {
       if (process.env.NODE_ENV === "development") {
         console.log(`Server running on http://localhost:${PORT}`);

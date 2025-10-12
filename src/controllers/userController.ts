@@ -44,7 +44,7 @@ export class UserController {
     }
 
     try {
-      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS)
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
       const user = await this.dao.create({ ...rest, email, password: hashedPassword });
       res.status(201).json(user._id);
     } catch (err: any) {
@@ -54,7 +54,7 @@ export class UserController {
         res.status(400).json({ message: err.message });
       } else {
         if (process.env.NODE_ENV === "development") {
-          console.log("Register error: " + err.message)
+          console.log("Register error: " + err.message);
 
           res.status(500).json({ message: "Internal server error" });
         }
