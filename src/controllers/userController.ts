@@ -61,6 +61,43 @@ export class UserController {
       }
     }
   }
+
+  async loginUser(req: Request, res: Response): Promise<void> {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ message: "Email and password required" });
+      return;
+    }
+
+    try {
+      const user = await this.dao.findByEmail(email);
+      if (!user) {
+        res.status(401).json({ message: "Invalid email or password" });
+        return;
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        res.status(401).json({ message: "Invalid email or password" });
+        return;
+      }
+
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET || "",
+        { expiresIn: "2h" }
+      );
+
+      res.status(200).json(token);
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Login error: " + err.message)
+
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  }
 }
 
 /**
