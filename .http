@@ -1,0 +1,16 @@
+### 
+
+@BASE_URL = http://localhost:5173/api
+
+POST {{BASE_URL}}/users/register HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "age": 19,
+  "confirmPassword": "Aa12345.",
+  "email": "jhormanmauri@gmail.com",
+  "firstName": "Jhorman",
+  "lastName": "Gomez",
+  "password": "Aa12345."
+}
