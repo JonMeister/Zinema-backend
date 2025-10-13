@@ -55,7 +55,7 @@ export class UserController {
     if (!PASSWORD_REGEX.test(password)) {
       res.status(400).json({
         message:
-          "Password must contain at least 8 characters, one uppercase, one lowercase, and one special character",
+          "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character",
       });
       return;
     }
