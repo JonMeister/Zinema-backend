@@ -92,7 +92,7 @@ export class UserController {
       res.status(200).json(token);
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Login error: " + err.message)
+        console.log("Login error: " + err.message);
 
         res.status(500).json({ message: "Internal server error" });
       }
