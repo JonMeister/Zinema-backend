@@ -195,6 +195,15 @@ export class UserController {
       }
         console.log("Login error: " + err.message);
 
+      // If password is being updated, validate and hash it
+      if (password) {
+        if (!PASSWORD_REGEX.test(password)) {
+          res.status(400).json({ message: "Password does not meet complexity requirements" });
+          return;
+        }
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        req.body.password = hashedPassword;
+      }
       await this.dao.update(userId, req.body);
 
       res.status(200).json({ message: "Profile successfully updated" });
