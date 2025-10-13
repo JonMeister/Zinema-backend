@@ -2,6 +2,9 @@
 
 @BASE_URL = http://localhost:5173/api
 
+
+### 
+
 POST {{BASE_URL}}/users/register HTTP/1.1
 Accept: application/json
 Content-Type: application/json
@@ -12,5 +15,17 @@ Content-Type: application/json
   "email": "jhormanmauri@gmail.com",
   "firstName": "Jhorman",
   "lastName": "Gomez",
+  "password": "Aa12345."
+}
+
+
+### 
+
+POST {{BASE_URL}}/users/login HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "jhormanmauri@gmail.com",
   "password": "Aa12345."
 }

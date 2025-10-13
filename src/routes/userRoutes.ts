@@ -17,6 +17,15 @@ const router = Router();
 router.post("/register", (req, res) => userController.registerUser(req, res));
 
 /**
+ * @route POST /api/users/login
+ * @description Login a user and return a JWT token.
+ * @body {string} email - The user's email.
+ * @body {string} password - The user's password.
+ * @access Public
+*/
+router.post("/login", (req, res) => userController.loginUser(req, res));
+
+/**
  *  * Export the router instance to be mounted in the main routes file.
 */
 export default router;
