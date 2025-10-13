@@ -26,6 +26,24 @@ router.post("/register", (req, res) => userController.registerUser(req, res));
 router.post("/login", (req, res) => userController.loginUser(req, res));
 
 /**
+ * @route POST /api/users/request-password-reset
+ * @description Request a password reset email.
+ * @body {string} email - The user's email.
+ * @access Public
+ */
+router.post("/request-password-reset", (req, res) => userController.requestPasswordReset(req, res));
+
+/**
+ * @route POST /api/users/reset-password
+ * @description Reset password using token from email.
+ * @body {string} token - The reset token from email.
+ * @body {string} password - The new password.
+ * @body {string} confirmPassword - The password confirmation.
+ * @access Public
+ */
+router.post("/reset-password", (req, res) => userController.resetPassword(req, res));
+
+/**
  *  * Export the router instance to be mounted in the main routes file.
 */
 export default router;
