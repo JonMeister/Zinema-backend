@@ -32,4 +32,7 @@ router.get("/info/title/:title/page/:page", authenticateToken, (req, res) => vid
  */
 router.get("/info/id/:id", authenticateToken, (req, res) => videoController.getVideoInfoId(req, res));
 
+/**
+ * Export the router instance to be mounted in the main routes file.
+ */
 export default router;
