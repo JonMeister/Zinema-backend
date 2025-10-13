@@ -40,6 +40,46 @@ export class UserDAO {
   async delete(id: string): Promise<(IUser & Document) | null> {
     return User.findByIdAndDelete(id).exec();
   }
+
+  /**
+   * Find a user by reset password token.
+   */
+  async findByResetToken(token: string): Promise<(IUser & Document) | null> {
+    return User.findOne({ 
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() }
+    }).exec();
+  }
+
+  /**
+   * Set reset password token and expiration for a user.
+   */
+  async setResetToken(email: string, token: string, expiresAt: Date): Promise<(IUser & Document) | null> {
+    return User.findOneAndUpdate(
+      { email },
+      { 
+        resetPasswordToken: token,
+        resetPasswordExpires: expiresAt
+      },
+      { new: true }
+    ).exec();
+  }
+
+  /**
+   * Clear reset password token for a user.
+   */
+  async clearResetToken(userId: string): Promise<(IUser & Document) | null> {
+    return User.findByIdAndUpdate(
+      userId,
+      { 
+        $unset: { 
+          resetPasswordToken: 1,
+          resetPasswordExpires: 1
+        }
+      },
+      { new: true }
+    ).exec();
+  }
 }
 
 /**
