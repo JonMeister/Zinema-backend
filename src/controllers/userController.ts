@@ -5,47 +5,63 @@ import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { emailService } from "../services/emailService";
 
+/** Regex used to validate email format. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Regex used to validate password strength. */
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+/** Number of salt rounds used for bcrypt hashing. */
 const SALT_ROUNDS = 10;
 
+/**
+ * Extends the standard Express `Request` type to include user information
+ * extracted from a verified JWT token.
+ */
 export interface AuthenticatedRequest extends Request {
   user?: { id: string; email: string };
 }
 
 /**
- * Controller for User operations.
+ * Controller responsible for all user-related operations:
+ * registration, authentication, profile retrieval, updates, and deletion.
  */
 export class UserController {
   private dao = userDAO;
 
+  /**
+   * Registers a new user in the database.
+   *
+   * Validates required fields, email format, and password strength.
+   * If validation passes, it hashes the password and stores the new user.
+   *
+   * @param req - Express request containing user data (`email`, `password`, `confirmPassword`, etc.)
+   * @param res - Express response used to send the HTTP result.
+   * @returns Sends a JSON response with the new user's ID or an error message.
+   */
   async registerUser(req: Request, res: Response): Promise<void> {
     const { password, confirmPassword, email, ...rest } = req.body;
 
     if (!email || !password || !confirmPassword) {
-      res.status(400).json({ message: "Todos los campos son requeridos" });
-
+      res.status(400).json({ message: "All fields are required" });
       return;
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      res.status(400).json({ message: "Formato de email inválido" });
-
+      res.status(400).json({ message: "Invalid email format" });
       return;
     }
 
     if (!PASSWORD_REGEX.test(password)) {
       res.status(400).json({
         message:
-          "La contraseña debe contener al menos 8 caracteres, 1 mayúscula, 1 minúscula y 1 caracter especial",
+          "Password must contain at least 8 characters, one uppercase, one lowercase, and one special character",
       });
-
       return;
     }
 
     if (password !== confirmPassword) {
-      res.status(400).json({ message: "Las contraseñas no coinciden" });
-
+      res.status(400).json({ message: "Passwords do not match" });
       return;
     }
 
@@ -56,42 +72,46 @@ export class UserController {
       res.status(201).json({ userId: user._id });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "El email ya existe" });
-
+        res.status(409).json({ message: "Email already exists" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
-
       } else {
         if (process.env.NODE_ENV === "development") {
-          console.log("Register error: " + err.message);
-
-          res.status(500).json({ message: "Internal server error" });
+          console.log("Register error:", err.message);
         }
+        res.status(500).json({ message: "Internal server error" });
       }
     }
   }
 
+  /**
+   * Logs in an existing user.
+   *
+   * Validates the email and password against the database,
+   * and returns a signed JWT token if successful.
+   *
+   * @param req - Express request containing `email` and `password`.
+   * @param res - Express response used to send the token or error message.
+   * @returns A JSON object containing `{ token }` if authentication succeeds.
+   */
   async loginUser(req: Request, res: Response): Promise<void> {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ message: "Todos los campos son requeridos" });
-
+      res.status(400).json({ message: "All fields are required" });
       return;
     }
 
     try {
       const user = await this.dao.findByEmail(email);
       if (!user) {
-        res.status(401).json({ message: "Email o contraseña inválidos" });
-
+        res.status(401).json({ message: "Invalid email or password" });
         return;
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        res.status(401).json({ message: "Email o contraseña inválidos" });
-
+        res.status(401).json({ message: "Invalid email or password" });
         return;
       }
 
@@ -101,37 +121,32 @@ export class UserController {
         { expiresIn: "2h" }
       );
 
-      res.status(200).json({ token: token });
+      res.status(200).json({ token });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Login error: " + err.message);
-
-        res.status(500).json({ message: "Internal server error" });
+        console.log("Login error:", err.message);
       }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   /**
-   * Retrieves the profile information of the currently authenticated user.
+   * Retrieves the profile of the currently authenticated user.
    *
-   * Requires authentication via {@link authenticateToken}.
+   * Requires a valid JWT token (decoded via authentication middleware).
+   * Returns basic profile data.
    *
-   * @async
-   * @param {import("express").Request} req - Express request object, `req.user` contains decoded JWT info
-   * @param {import("express").Response} res - Express response object
-   * @returns {Promise<void>} Returns HTTP status codes:
-   *   - 200: Returns user profile `{ firstName, lastName, age, email }`
-   *   - 404: User not found
-   *   - 500: Internal server error
+   * @param req - Authenticated request containing `req.user.id`.
+   * @param res - Express response returning the user data or an error.
+   * @returns A JSON object with the user profile.
    */
-  async getUser(req: AuthenticatedRequest, res: Response) {
+  async getUser(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
       const userId = req.user!.id;
-
       const user = await this.dao.findById(userId);
-      if (!user) {
-        res.status(404).json({ message: "Usuario no encontrado" });
 
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
         return;
       }
 
@@ -141,29 +156,25 @@ export class UserController {
         age: user.age,
         email: user.email,
         createdAt: user.createdAt,
-        updatedAt: user.updatedAt
+        updatedAt: user.updatedAt,
       });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Get user error: " + err.message)
-
-        res.status(500).json({ message: "Internal server error" });
+        console.log("Get user error:", err.message);
       }
+      res.status(500).json({ message: "Internal server error" });
     }
   }
 
   /**
-   * Updates the profile of the authenticated user.
+   * Updates the authenticated user's profile.
    *
-   * Retrieves the user ID from the decoded JWT token (`req.user.id`) and
-   * updates the user's document in the database with the data provided
-   * in `req.body`. Only updates fields allowed by the model validators.
+   * Only fields allowed by the model schema can be updated.
+   * If a password is provided, it must be confirmed via `confirmPassword`.
    *
-   * @async
-   * @param {import("express").Request} req - Express request object. The body should
-   * contain the fields to update (e.g., firstName, lastName, age, email, password).
-   * @param {import("express").Response} res - Express response object.
-   * @returns {Promise<void>} Sends a JSON response with a success message or an error.
+   * @param req - Authenticated request containing updated user fields.
+   * @param res - Express response with a success or error message.
+   * @returns A success message if the update completes successfully.
    */
   async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
     try {
@@ -172,39 +183,56 @@ export class UserController {
 
       const user = await this.dao.findById(userId);
       if (!user) {
-        res.status(404).json({ message: "Usuario no encontrado" });
-
+        res.status(404).json({ message: "User not found" });
         return;
       }
 
-      if (password) {
-        if (password !== confirmPassword) {
-          res
-            .status(400)
-            .json({ message: "Las contraseñas no coinciden" });
-
-          return;
-        }
+      if (password && password !== confirmPassword) {
+        res.status(400).json({ message: "Passwords do not match" });
+        return;
       }
 
       await this.dao.update(userId, req.body);
 
-      res.status(200).json({
-        message: "Perfil exitosamente actualizado",
-      });
+      res.status(200).json({ message: "Profile successfully updated" });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "El email ya existe" });
-
+        res.status(409).json({ message: "Email already exists" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
-
       } else {
         if (process.env.NODE_ENV === "development") {
-          console.log("Register error: " + err.message)
-
-          res.status(500).json({ message: "Internal server error" });
+          console.log("Update user error:", err.message);
         }
+        res.status(500).json({ message: "Internal server error" });
+      }
+    }
+  }
+
+  /**
+   * Deletes the authenticated user's account.
+   *
+   * Permanently removes the user document from the database.
+   *
+   * @param req - Authenticated request containing the user ID (`req.user.id`).
+   * @param res - Express response confirming deletion or returning an error.
+   * @returns A JSON message confirming account deletion.
+   */
+  async deleteUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+
+      const user = await this.dao.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+        return;
+      }
+
+      await this.dao.delete(userId);
+      res.status(200).json({ message: "Profile successfully deleted" });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Delete user error:", err.message);
       }
   async requestPasswordReset(req: Request, res: Response): Promise<void> {
     const { email } = req.body;
@@ -298,7 +326,5 @@ export class UserController {
   }
 }
 
-/**
- * Singleton instance
- */
+/** Singleton instance of the UserController. */
 export const userController = new UserController();
