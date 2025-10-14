@@ -2,12 +2,20 @@ import 'dotenv/config';
 import { Resend } from 'resend';
 
 /**
- * Email service for handling password recovery emails
+ * Email service for handling password recovery emails using Resend API.
+ * 
+ * Provides functionality to send password reset emails with secure tokens.
+ * Uses Resend as the email delivery service.
  */
 export class EmailService {
   private resend: Resend;
   private from: string;
 
+  /**
+   * Initializes the email service with Resend API configuration.
+   * 
+   * @throws {Error} Throws an error if RESEND_API_KEY environment variable is not set.
+   */
   constructor() {
     const resendApiKey = process.env.RESEND_API_KEY;
     if (!resendApiKey) {
@@ -19,9 +27,14 @@ export class EmailService {
   }
 
   /**
-   * Send password recovery email
-   * @param to - Recipient email address
-   * @param resetLink - Password reset link
+   * Sends a password recovery email to the specified recipient.
+   * 
+   * The email contains a styled HTML template with a secure reset link
+   * that expires in 1 hour. Includes security warnings and instructions.
+   * 
+   * @param to - The recipient's email address.
+   * @param resetLink - The complete password reset URL with token.
+   * @throws {Error} Throws an error if the email fails to send via Resend API.
    */
   async sendRecoveryEmail(to: string, resetLink: string): Promise<void> {
     console.log("Enviando correo (Resend) a:", to);
