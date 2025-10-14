@@ -234,6 +234,21 @@ export class UserController {
       if (process.env.NODE_ENV === "development") {
         console.log("Delete user error:", err.message);
       }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+
+  /**
+   * Initiates a password reset process for a user.
+   *
+   * Validates the email format and generates a secure reset token.
+   * Sends a password reset email with a link containing the token.
+   * Always returns success to prevent email enumeration attacks.
+   *
+   * @param req - Express request containing `email` in the body.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response indicating the reset email was sent (if email exists).
+   */
   async requestPasswordReset(req: Request, res: Response): Promise<void> {
     const { email } = req.body;
 
@@ -281,6 +296,17 @@ export class UserController {
     }
   }
 
+  /**
+   * Resets a user's password using a valid reset token.
+   *
+   * Validates the reset token, password strength, and confirmation.
+   * Updates the user's password and clears the reset token from the database.
+   * The token must be valid and not expired.
+   *
+   * @param req - Express request containing `token`, `password`, and `confirmPassword`.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response confirming successful password reset or error details.
+   */
   async resetPassword(req: Request, res: Response): Promise<void> {
     const { token, password, confirmPassword } = req.body;
 
