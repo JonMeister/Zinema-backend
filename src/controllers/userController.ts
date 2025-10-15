@@ -1,0 +1,356 @@
+import { Request, Response } from "express";
+import { userDAO } from "../dao/userDAO";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { emailService } from "../services/emailService";
+
+/** Regex used to validate email format. */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Regex used to validate password strength. */
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+
+/** Number of salt rounds used for bcrypt hashing. */
+const SALT_ROUNDS = 10;
+
+/**
+ * Extends the standard Express `Request` type to include user information
+ * extracted from a verified JWT token.
+ */
+export interface AuthenticatedRequest extends Request {
+  user?: { id: string; email: string };
+}
+
+/**
+ * Controller responsible for all user-related operations:
+ * registration, authentication, profile retrieval, updates, and deletion.
+ */
+export class UserController {
+  private dao = userDAO;
+
+  /**
+   * Registers a new user in the database.
+   *
+   * Validates required fields, email format, and password strength.
+   * If validation passes, it hashes the password and stores the new user.
+   *
+   * @param req - Express request containing user data (`email`, `password`, `confirmPassword`, etc.)
+   * @param res - Express response used to send the HTTP result.
+   * @returns Sends a JSON response with the new user's ID or an error message.
+   */
+  async registerUser(req: Request, res: Response): Promise<void> {
+    const { password, confirmPassword, email, ...rest } = req.body;
+
+    if (!email || !password || !confirmPassword) {
+      res.status(400).json({ message: "Todos los campos son requeridos" });
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      res.status(400).json({ message: "Formato de correo inválido" });
+      return;
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      res.status(400).json({
+        message:
+          "La contraseña debe contener al menos 8 caracteres, una mayúscula, una minúscula y un carácter especial",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
+      return;
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+      const user = await this.dao.create({ ...rest, email, password: hashedPassword });
+
+      res.status(201).json({ userId: user._id });
+    } catch (err: any) {
+      if (err.code === 11000) {
+        res.status(409).json({ message: "El correo ya existe" });
+      } else if (err.name === "ValidationError") {
+        res.status(400).json({ message: err.message });
+      } else {
+        if (process.env.NODE_ENV === "development") {
+          console.log("Register error:", err.message);
+        }
+        res.status(500).json({ message: "Error interno del servidor" });
+      }
+    }
+  }
+
+  /**
+   * Logs in an existing user.
+   *
+   * Validates the email and password against the database,
+   * and returns a signed JWT token if successful.
+   *
+   * @param req - Express request containing `email` and `password`.
+   * @param res - Express response used to send the token or error message.
+   * @returns A JSON object containing `{ token }` if authentication succeeds.
+   */
+  async loginUser(req: Request, res: Response): Promise<void> {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      res.status(400).json({ message: "Todos los campos son requeridos" });
+      return;
+    }
+
+    try {
+      const user = await this.dao.findByEmail(email);
+      if (!user) {
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
+        return;
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
+        return;
+      }
+
+      const token = jwt.sign(
+        { id: user._id, email: user.email },
+        process.env.JWT_SECRET || "",
+        { expiresIn: "2h" }
+      );
+
+      res.status(200).json({ token });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Login error:", err.message);
+      }
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Retrieves the profile of the currently authenticated user.
+   *
+   * Requires a valid JWT token (decoded via authentication middleware).
+   * Returns basic profile data.
+   *
+   * @param req - Authenticated request containing `req.user.id`.
+   * @param res - Express response returning the user data or an error.
+   * @returns A JSON object with the user profile.
+   */
+  async getUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+      const user = await this.dao.findById(userId);
+
+      if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+        return;
+      }
+
+      res.status(200).json({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        age: user.age,
+        email: user.email,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Get user error:", err.message);
+      }
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Updates the authenticated user's profile.
+   *
+   * Only fields allowed by the model schema can be updated.
+   * If a password is provided, it must be confirmed via `confirmPassword`.
+   *
+   * @param req - Authenticated request containing updated user fields.
+   * @param res - Express response with a success or error message.
+   * @returns A success message if the update completes successfully.
+   */
+  async updateUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const { password, confirmPassword } = req.body;
+      const userId = req.user!.id;
+
+      const user = await this.dao.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+        return;
+      }
+
+      if (password && password !== confirmPassword) {
+        res.status(400).json({ message: "Las contraseñas no coinciden" });
+        return;
+      }
+
+      await this.dao.update(userId, req.body);
+
+      res.status(200).json({ message: "Perfil actualizado exitosamente" });
+    } catch (err: any) {
+      if (err.code === 11000) {
+        res.status(409).json({ message: "El correo ya existe" });
+      } else if (err.name === "ValidationError") {
+        res.status(400).json({ message: err.message });
+      } else {
+        if (process.env.NODE_ENV === "development") {
+          console.log("Update user error:", err.message);
+        }
+        res.status(500).json({ message: "Error interno del servidor" });
+      }
+    }
+  }
+
+  /**
+   * Deletes the authenticated user's account.
+   *
+   * Permanently removes the user document from the database.
+   *
+   * @param req - Authenticated request containing the user ID (`req.user.id`).
+   * @param res - Express response confirming deletion or returning an error.
+   * @returns A JSON message confirming account deletion.
+   */
+  async deleteUser(req: AuthenticatedRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user!.id;
+
+      const user = await this.dao.findById(userId);
+      if (!user) {
+        res.status(404).json({ message: "Usuario no encontrado" });
+        return;
+      }
+
+      await this.dao.delete(userId);
+      res.status(200).json({ message: "Perfil eliminado exitosamente" });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.log("Delete user error:", err.message);
+      }
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Initiates a password reset process for a user.
+   *
+   * Validates the email format and generates a secure reset token.
+   * Sends a password reset email with a link containing the token.
+   * Always returns success to prevent email enumeration attacks.
+   *
+   * @param req - Express request containing `email` in the body.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response indicating the reset email was sent (if email exists).
+   */
+  async requestPasswordReset(req: Request, res: Response): Promise<void> {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: "El correo es requerido" });
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      res.status(400).json({ message: "Formato de correo inválido" });
+      return;
+    }
+
+    try {
+      const user = await this.dao.findByEmail(email);
+      
+      // Always return success to prevent email enumeration attacks
+      if (!user) {
+        res.status(200).json({ 
+          message: "Si el correo existe, se ha enviado un enlace de recuperación" 
+        });
+        return;
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Save token to database
+      await this.dao.setResetToken(email, resetToken, resetExpires);
+
+      // Generate reset link
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/password-reset?token=${resetToken}`;
+
+      // Send email
+      await emailService.sendRecoveryEmail(email, resetLink);
+
+      res.status(200).json({ 
+        message: "Si el correo existe, se ha enviado un enlace de recuperación" 
+      });
+
+    } catch (err: any) {
+      console.error("Password reset request error:", err.message);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Resets a user's password using a valid reset token.
+   *
+   * Validates the reset token, password strength, and confirmation.
+   * Updates the user's password and clears the reset token from the database.
+   * The token must be valid and not expired.
+   *
+   * @param req - Express request containing `token`, `password`, and `confirmPassword`.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response confirming successful password reset or error details.
+   */
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token || !password || !confirmPassword) {
+      res.status(400).json({ message: "Token, contraseña y confirmación son requeridos" });
+      return;
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      res.status(400).json({
+        message: "La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
+      return;
+    }
+
+    try {
+      // Find user by token
+      const user = await this.dao.findByResetToken(token);
+      
+      if (!user) {
+        res.status(400).json({ message: "Token de recuperación inválido o expirado" });
+        return;
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+      // Update password and clear reset token
+      await this.dao.update(String(user._id), { password: hashedPassword });
+      await this.dao.clearResetToken(String(user._id));
+
+      res.status(200).json({ message: "Contraseña restablecida exitosamente" });
+
+    } catch (err: any) {
+      console.error("Password reset error:", err.message);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+}
+
+/** Singleton instance of the UserController. */
+export const userController = new UserController();
