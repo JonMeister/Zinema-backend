@@ -43,25 +43,25 @@ export class UserController {
     const { password, confirmPassword, email, ...rest } = req.body;
 
     if (!email || !password || !confirmPassword) {
-      res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ message: "Todos los campos son requeridos" });
       return;
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      res.status(400).json({ message: "Invalid email format" });
+      res.status(400).json({ message: "Formato de correo inválido" });
       return;
     }
 
     if (!PASSWORD_REGEX.test(password)) {
       res.status(400).json({
         message:
-          "Password must contain at least 8 characters, one uppercase, one lowercase, and one special character",
+          "La contraseña debe contener al menos 8 caracteres, una mayúscula, una minúscula y un carácter especial",
       });
       return;
     }
 
     if (password !== confirmPassword) {
-      res.status(400).json({ message: "Passwords do not match" });
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
       return;
     }
 
@@ -72,14 +72,14 @@ export class UserController {
       res.status(201).json({ userId: user._id });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "Email already exists" });
+        res.status(409).json({ message: "El correo ya existe" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
       } else {
         if (process.env.NODE_ENV === "development") {
           console.log("Register error:", err.message);
         }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Error interno del servidor" });
       }
     }
   }
@@ -98,20 +98,20 @@ export class UserController {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ message: "Todos los campos son requeridos" });
       return;
     }
 
     try {
       const user = await this.dao.findByEmail(email);
       if (!user) {
-        res.status(401).json({ message: "Invalid email or password" });
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
         return;
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        res.status(401).json({ message: "Invalid email or password" });
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
         return;
       }
 
@@ -126,7 +126,7 @@ export class UserController {
       if (process.env.NODE_ENV === "development") {
         console.log("Login error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -146,7 +146,7 @@ export class UserController {
       const user = await this.dao.findById(userId);
 
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({ message: "Usuario no encontrado" });
         return;
       }
 
@@ -162,7 +162,7 @@ export class UserController {
       if (process.env.NODE_ENV === "development") {
         console.log("Get user error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -183,28 +183,28 @@ export class UserController {
 
       const user = await this.dao.findById(userId);
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({ message: "Usuario no encontrado" });
         return;
       }
 
       if (password && password !== confirmPassword) {
-        res.status(400).json({ message: "Passwords do not match" });
+        res.status(400).json({ message: "Las contraseñas no coinciden" });
         return;
       }
 
       await this.dao.update(userId, req.body);
 
-      res.status(200).json({ message: "Profile successfully updated" });
+      res.status(200).json({ message: "Perfil actualizado exitosamente" });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "Email already exists" });
+        res.status(409).json({ message: "El correo ya existe" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
       } else {
         if (process.env.NODE_ENV === "development") {
           console.log("Update user error:", err.message);
         }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Error interno del servidor" });
       }
     }
   }
@@ -224,17 +224,17 @@ export class UserController {
 
       const user = await this.dao.findById(userId);
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({ message: "Usuario no encontrado" });
         return;
       }
 
       await this.dao.delete(userId);
-      res.status(200).json({ message: "Profile successfully deleted" });
+      res.status(200).json({ message: "Perfil eliminado exitosamente" });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
         console.log("Delete user error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -253,12 +253,12 @@ export class UserController {
     const { email } = req.body;
 
     if (!email) {
-      res.status(400).json({ message: "Email is required" });
+      res.status(400).json({ message: "El correo es requerido" });
       return;
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      res.status(400).json({ message: "Invalid email format" });
+      res.status(400).json({ message: "Formato de correo inválido" });
       return;
     }
 
@@ -268,7 +268,7 @@ export class UserController {
       // Always return success to prevent email enumeration attacks
       if (!user) {
         res.status(200).json({ 
-          message: "If the email exists, a password reset link has been sent" 
+          message: "Si el correo existe, se ha enviado un enlace de recuperación" 
         });
         return;
       }
@@ -287,12 +287,12 @@ export class UserController {
       await emailService.sendRecoveryEmail(email, resetLink);
 
       res.status(200).json({ 
-        message: "If the email exists, a password reset link has been sent" 
+        message: "Si el correo existe, se ha enviado un enlace de recuperación" 
       });
 
     } catch (err: any) {
       console.error("Password reset request error:", err.message);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -311,19 +311,19 @@ export class UserController {
     const { token, password, confirmPassword } = req.body;
 
     if (!token || !password || !confirmPassword) {
-      res.status(400).json({ message: "Token, password and confirmation are required" });
+      res.status(400).json({ message: "Token, contraseña y confirmación son requeridos" });
       return;
     }
 
     if (!PASSWORD_REGEX.test(password)) {
       res.status(400).json({
-        message: "Password must have at least 8 characters long, 1 uppercase, 1 lowercase, 1 number and 1 special character",
+        message: "La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial",
       });
       return;
     }
 
     if (password !== confirmPassword) {
-      res.status(400).json({ message: "Passwords do not match" });
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
       return;
     }
 
@@ -332,7 +332,7 @@ export class UserController {
       const user = await this.dao.findByResetToken(token);
       
       if (!user) {
-        res.status(400).json({ message: "Invalid or expired reset token" });
+        res.status(400).json({ message: "Token de recuperación inválido o expirado" });
         return;
       }
 
@@ -343,11 +343,11 @@ export class UserController {
       await this.dao.update(String(user._id), { password: hashedPassword });
       await this.dao.clearResetToken(String(user._id));
 
-      res.status(200).json({ message: "Password has been reset successfully" });
+      res.status(200).json({ message: "Contraseña restablecida exitosamente" });
 
     } catch (err: any) {
       console.error("Password reset error:", err.message);
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 }
