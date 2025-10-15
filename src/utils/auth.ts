@@ -46,20 +46,20 @@ export function authenticateToken(
   const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    res.status(401).json({ message: "Token missing" });
+    res.status(401).json({ message: "Token faltante" });
     return;
   }
 
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("JWT_SECRET not defined in environment variables.");
-    res.status(500).json({ message: "Server misconfiguration" });
+    res.status(500).json({ message: "Configuración incorrecta del servidor" });
     return;
   }
 
   jwt.verify(token, secret, (err, decoded) => {
     if (err || !decoded) {
-      res.status(403).json({ message: "Invalid token" });
+      res.status(403).json({ message: "Token inválido" });
       return;
     }
 
@@ -67,7 +67,7 @@ export function authenticateToken(
       req.user = decoded as JwtPayloadCustom;
       next();
     } else {
-      res.status(403).json({ message: "Malformed token payload" });
+      res.status(403).json({ message: "Token con formato incorrecto" });
     }
   });
 }
