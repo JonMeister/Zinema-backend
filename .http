@@ -1,0 +1,65 @@
+### 
+
+@BASE_URL = http://localhost:5173/api
+
+
+### 
+
+POST {{BASE_URL}}/users/register HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "age": 19,
+  "confirmPassword": "Aa12345.",
+  "email": "jhormanmauri@gmail.com",
+  "firstName": "Jhorman",
+  "lastName": "Gomez",
+  "password": "Aa12345."
+}
+
+
+### 
+
+POST {{BASE_URL}}/users/login HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+
+{
+  "email": "jhormanmauri@gmail.com",
+  "password": "Aa12345."
+}
+
+> {%
+  client.global.set("TOKEN", response.body.token);
+%}
+
+
+### 
+
+GET {{BASE_URL}}/users/getUser HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+
+### 
+
+PUT {{BASE_URL}}/users/updateUser HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "age": 19,
+  "email": "jhormanmauri@gmail.com",
+  "firstName": "Jhorman",
+  "lastName": "Gomez"
+}
+
+
+### 
+
+DELETE {{BASE_URL}}/users/deleteUser HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}

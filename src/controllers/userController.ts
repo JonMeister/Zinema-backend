@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import { userDAO } from "../dao/userDAO";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { emailService } from "../services/emailService";
 
 /** Regex used to validate email format. */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,25 +43,25 @@ export class UserController {
     const { password, confirmPassword, email, ...rest } = req.body;
 
     if (!email || !password || !confirmPassword) {
-      res.status(400).json({ message: "All fields are required" });
+      res.status(400).json({ message: "Todos los campos son requeridos" });
       return;
     }
 
     if (!EMAIL_REGEX.test(email)) {
-      res.status(400).json({ message: "Invalid email format" });
+      res.status(400).json({ message: "Formato de correo inválido" });
       return;
     }
 
     if (!PASSWORD_REGEX.test(password)) {
       res.status(400).json({
         message:
-          "Password must contain at least 8 characters, one uppercase, one lowercase, and one special character",
+          "La contraseña debe contener al menos 8 caracteres, una mayúscula, una minúscula y un carácter especial",
       });
       return;
     }
 
     if (password !== confirmPassword) {
-      res.status(400).json({ message: "Passwords do not match" });
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
       return;
     }
 
@@ -70,14 +72,14 @@ export class UserController {
       res.status(201).json({ userId: user._id });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "Email already exists" });
+        res.status(409).json({ message: "El correo ya existe" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
       } else {
         if (process.env.NODE_ENV === "development") {
           console.log("Register error:", err.message);
         }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Error interno del servidor" });
       }
     }
   }
@@ -103,13 +105,13 @@ export class UserController {
     try {
       const user = await this.dao.findByEmail(email);
       if (!user) {
-        res.status(401).json({ message: "Email o contraseña no válidos" });
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
         return;
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
-        res.status(401).json({ message: "Email o contraseña no válidos" });
+        res.status(401).json({ message: "Correo o contraseña inválidos" });
         return;
       }
 
@@ -124,7 +126,7 @@ export class UserController {
       if (process.env.NODE_ENV === "development") {
         console.log("Login error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -160,7 +162,7 @@ export class UserController {
       if (process.env.NODE_ENV === "development") {
         console.log("Get user error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 
@@ -215,7 +217,7 @@ export class UserController {
         if (process.env.NODE_ENV === "development") {
           console.log("Update user error:", err.message);
         }
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ message: "Error interno del servidor" });
       }
     }
   }
@@ -240,12 +242,125 @@ export class UserController {
       }
 
       await this.dao.delete(userId);
-      res.status(200).json({ message: "Perfil exitosamente borrado" });
+      res.status(200).json({ message: "Perfil eliminado exitosamente" });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
         console.log("Delete user error:", err.message);
       }
-      res.status(500).json({ message: "Internal server error" });
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Initiates a password reset process for a user.
+   *
+   * Validates the email format and generates a secure reset token.
+   * Sends a password reset email with a link containing the token.
+   * Always returns success to prevent email enumeration attacks.
+   *
+   * @param req - Express request containing `email` in the body.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response indicating the reset email was sent (if email exists).
+   */
+  async requestPasswordReset(req: Request, res: Response): Promise<void> {
+    const { email } = req.body;
+
+    if (!email) {
+      res.status(400).json({ message: "El correo es requerido" });
+      return;
+    }
+
+    if (!EMAIL_REGEX.test(email)) {
+      res.status(400).json({ message: "Formato de correo inválido" });
+      return;
+    }
+
+    try {
+      const user = await this.dao.findByEmail(email);
+
+      // Always return success to prevent email enumeration attacks
+      if (!user) {
+        res.status(200).json({
+          message: "Si el correo existe, se ha enviado un enlace de recuperación"
+        });
+        return;
+      }
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+      // Save token to database
+      await this.dao.setResetToken(email, resetToken, resetExpires);
+
+      // Generate reset link
+      const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/password-reset?token=${resetToken}`;
+
+      // Send email
+      await emailService.sendRecoveryEmail(email, resetLink);
+
+      res.status(200).json({
+        message: "Si el correo existe, se ha enviado un enlace de recuperación"
+      });
+
+    } catch (err: any) {
+      console.error("Password reset request error:", err.message);
+      res.status(500).json({ message: "Error interno del servidor" });
+    }
+  }
+
+  /**
+   * Resets a user's password using a valid reset token.
+   *
+   * Validates the reset token, password strength, and confirmation.
+   * Updates the user's password and clears the reset token from the database.
+   * The token must be valid and not expired.
+   *
+   * @param req - Express request containing `token`, `password`, and `confirmPassword`.
+   * @param res - Express response used to send success message or error.
+   * @returns A JSON response confirming successful password reset or error details.
+   */
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    const { token, password, confirmPassword } = req.body;
+
+    if (!token || !password || !confirmPassword) {
+      res.status(400).json({ message: "Token, contraseña y confirmación son requeridos" });
+      return;
+    }
+
+    if (!PASSWORD_REGEX.test(password)) {
+      res.status(400).json({
+        message: "La contraseña debe tener al menos 8 caracteres, 1 mayúscula, 1 minúscula, 1 número y 1 carácter especial",
+      });
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      res.status(400).json({ message: "Las contraseñas no coinciden" });
+      return;
+    }
+
+    try {
+      // Find user by token
+      const user = await this.dao.findByResetToken(token);
+
+      if (!user) {
+        res.status(400).json({ message: "Token de recuperación inválido o expirado" });
+        return;
+      }
+
+      // Hash new password
+      const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+      // Update password and clear reset token
+      await this.dao.update(String(user._id), { password: hashedPassword });
+      await this.dao.clearResetToken(String(user._id));
+
+      res.status(200).json({ message: "Contraseña restablecida exitosamente" });
+
+    } catch (err: any) {
+      console.error("Password reset error:", err.message);
+      res.status(500).json({ message: "Error interno del servidor" });
     }
   }
 }

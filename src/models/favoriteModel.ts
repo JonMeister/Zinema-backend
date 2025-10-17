@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Types, Document } from "mongoose";
 
 /**
  * Interface representing a Favorite document in MongoDB.
@@ -7,10 +7,9 @@ import mongoose, { Types } from "mongoose";
  * The `userId` references the user who favorited the video,
  * and `videoId` identifies the target video.
  */
-export interface IFavorite {
+export interface IFavorite extends Document {
   userId: Types.ObjectId | string;
   videoId: string;
-  _id: Types.ObjectId;
 }
 
 /**
