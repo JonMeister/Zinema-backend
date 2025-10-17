@@ -16,15 +16,7 @@ export const connectDB = async (): Promise<void> => {
       throw new Error("MONGO_URI is not defined in environment variables");
     }
 
-<<<<<<< HEAD
-    await mongoose.connect(process.env.MONGO_URI, {
-      // @ts-ignore: Mongoose types now infer options automatically
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-=======
     await mongoose.connect(process.env.MONGO_URI);
->>>>>>> 39b47680c3c12a819cebee4728e04d20c7033b3d
     console.log("Connected to MongoDB");
   } catch (error: unknown) {
     if (error instanceof Error) {

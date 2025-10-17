@@ -187,7 +187,7 @@ export class UserController {
         return;
       }
 
-      if (password && password !== confirmPassword) {
+      if (password) {
         if (password !== confirmPassword) {
           res.status(400).json({ message: "Las contraseñas no coinciden" });
           return;
@@ -195,7 +195,7 @@ export class UserController {
         if (!PASSWORD_REGEX.test(password)) {
           res.status(400).json({
             message:
-              "La contraseña debe contener al menos 8 caracteres, 1 minúscula, 1 mayúscula y 1 caracter esepcial",
+              "La contraseña debe contener al menos 8 caracteres, 1 minúscula, 1 mayúscula y 1 caracter especial",
           });
           return;
         }

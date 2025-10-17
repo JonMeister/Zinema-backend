@@ -24,7 +24,7 @@ export interface IFavorite extends Document {
 const FavoriteSchema = new mongoose.Schema<IFavorite>(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, required: true },
-    videoId: { type: String, required: true, trim: true },
+    videoId: { type: String, required: true },
   },
   {
     timestamps: true,
