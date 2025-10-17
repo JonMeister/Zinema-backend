@@ -16,7 +16,7 @@ export class FavoriteDAO {
   /**
    * Delete a favorite by ID.
    */
-  async delete(id: string): Promise<(IFavorite & Document) | null> {
+  async delete(id: string): Promise<(IFavorite) | null> {
     return Favorite.findByIdAndDelete(id).exec();
   }
 

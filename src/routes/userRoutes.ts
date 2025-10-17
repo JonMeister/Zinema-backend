@@ -61,8 +61,6 @@ router.delete("/deleteUser", authenticateToken, (req, res) =>
 );
 
 /**
-<<<<<<< HEAD
-=======
  * @route POST /api/users/request-password-reset
  * @description Request a password reset email.
  * @body {string} email - The user's email.
@@ -81,7 +79,6 @@ router.post("/request-password-reset", (req, res) => userController.requestPassw
 router.post("/reset-password", (req, res) => userController.resetPassword(req, res));
 
 /**
->>>>>>> 39b47680c3c12a819cebee4728e04d20c7033b3d
  * Export the router instance to be mounted in the main routes file.
  */
 export default router;
