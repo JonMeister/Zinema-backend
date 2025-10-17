@@ -8,6 +8,7 @@ import mongoose, { Types, Document } from "mongoose";
  * and `videoId` identifies the target video.
  */
 export interface IFavorite extends Document {
+  _id: Types.ObjectId;
   userId: Types.ObjectId | string;
   videoId: string;
 }
