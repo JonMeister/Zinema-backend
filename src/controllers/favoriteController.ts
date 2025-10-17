@@ -96,7 +96,7 @@ export class UserController {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      res.status(400).json({ message: "Todos los campos son requeridos" });
+      res.status(400).json({ message: "Todos los campos ron requeridos" });
       return;
     }
 

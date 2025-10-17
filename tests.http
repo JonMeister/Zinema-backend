@@ -67,7 +67,7 @@ Authorization: Bearer {{TOKEN}}
 
 ### 
 
-GET {{BASE_URL}}/videos/1 HTTP/1.1
+GET {{BASE_URL}}/videos/page/1 HTTP/1.1
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
@@ -85,9 +85,42 @@ Accept: application/json
 Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
 
-###
+
+### 
 
 GET {{BASE_URL}}/videos/info/title/"cup of"/page/1 HTTP/1.1
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
+
+
+### 
+
+POST {{BASE_URL}}/favorites/favorite HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "videoId": "{{VIDEO_ID}}"
+}
+
+
+### 
+
+GET {{BASE_URL}}/favorites/getFavorites HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+
+### 
+
+DELETE {{BASE_URL}}/favorites/unfavorite HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "videoId": "{{VIDEO_ID}}"
+}

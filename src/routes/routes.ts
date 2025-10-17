@@ -1,6 +1,7 @@
 import express from "express";
 import userRoutes from "./userRoutes";
-import videoRoutes from "./videoRoutes"
+import videoRoutes from "./videoRoutes";
+import favoriteRoutes from "./favoriteRoutes";
 
 const router = express.Router();
 
@@ -9,7 +10,9 @@ const router = express.Router();
  */
 router.use("/users", userRoutes);
 
-router.use("/videos", videoRoutes)
+router.use("/videos", videoRoutes);
+
+router.use("/favorites", favoriteRoutes);
 
 /**
  * Export the main router instance.

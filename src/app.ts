@@ -16,11 +16,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
 /**
- * Initialize database connection
- */
-connectDB();
-
-/**
  * Mount the API routes
  */
 app.use("/api/", routes);
