@@ -6,7 +6,7 @@
  */
 import express from "express";
 import userRoutes from "./userRoutes";
-import videoRoutes from "./videoRoutes"
+import videoRoutes from "./videoRoutes";
 
 /**
  * Express router instance for API routes.
