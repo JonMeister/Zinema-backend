@@ -27,7 +27,7 @@ const router = express.Router();
  */
 router.use("/users", userRoutes);
 
-router.use("/videos", videoRoutes)
+router.use("/videos", videoRoutes);
 
 /**
  * Export the main router instance.
