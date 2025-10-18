@@ -63,3 +63,31 @@ DELETE {{BASE_URL}}/users/deleteUser HTTP/1.1
 Accept: application/json
 Content-Type: application/json
 Authorization: Bearer {{TOKEN}}
+
+
+### 
+
+GET {{BASE_URL}}/videos/1 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+> {%
+  client.global.set("VIDEO_ID", response.body.videos[0].id);
+  console.log(client.global.get("VIDEO_ID"));
+%}
+
+
+### 
+
+GET {{BASE_URL}}/videos/info/id/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+###
+
+GET {{BASE_URL}}/videos/info/title/"cup of"/page/1 HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}

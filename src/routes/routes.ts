@@ -6,6 +6,7 @@
  */
 import express from "express";
 import userRoutes from "./userRoutes";
+import videoRoutes from "./videoRoutes";
 
 /**
  * Express router instance for API routes.
@@ -25,6 +26,8 @@ const router = express.Router();
  * - POST /api/users/reset-password - Reset password with token
  */
 router.use("/users", userRoutes);
+
+router.use("/videos", videoRoutes);
 
 /**
  * Export the main router instance.
