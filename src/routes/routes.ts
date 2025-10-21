@@ -7,6 +7,7 @@
 import express from "express";
 import userRoutes from "./userRoutes";
 import videoRoutes from "./videoRoutes";
+import favoriteRoutes from "./favoriteRoutes";
 
 /**
  * Express router instance for API routes.
@@ -28,6 +29,17 @@ const router = express.Router();
 router.use("/users", userRoutes);
 
 router.use("/videos", videoRoutes);
+
+/**
+ * Mount favorite-related routes under /favorites prefix.
+ * 
+ * All favorite endpoints will be accessible at /api/favorites/*:
+ * - POST /api/favorites - Add video to favorites
+ * - DELETE /api/favorites/:videoId - Remove video from favorites
+ * - GET /api/favorites - Get all user favorites with Pexels data
+ * - GET /api/favorites/check/:videoId - Check if video is favorited
+ */
+router.use("/favorites", favoriteRoutes);
 
 /**
  * Export the main router instance.

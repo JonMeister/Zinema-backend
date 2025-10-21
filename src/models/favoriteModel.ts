@@ -3,6 +3,8 @@ import mongoose, { Types } from "mongoose";
 export interface IFavorite {
   userId: Types.ObjectId;
   videoId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const FavoriteSchema = new mongoose.Schema<IFavorite>(
