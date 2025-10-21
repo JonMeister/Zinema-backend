@@ -30,6 +30,8 @@ router.use("/users", userRoutes);
 
 router.use("/videos", videoRoutes);
 
+router.use("/favorites", favoriteRoutes);
+
 /**
  * Mount favorite-related routes under /favorites prefix.
  * 

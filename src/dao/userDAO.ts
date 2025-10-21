@@ -1,4 +1,3 @@
-import { Document } from "mongoose";
 import { User, IUser } from "../models/userModel";
 
 /**
@@ -15,7 +14,7 @@ export class UserDAO {
    * @returns Promise resolving to the created user document.
    * @throws Will throw validation errors if data doesn't match schema requirements.
    */
-  async create(data: Partial<IUser>): Promise<IUser & Document> {
+  async create(data: Partial<IUser>): Promise<IUser> {
     const user = new User(data);
     return user.save();
   }
@@ -26,7 +25,7 @@ export class UserDAO {
    * @param email - The email address to search for.
    * @returns Promise resolving to the user document or null if not found.
    */
-  async findByEmail(email: string): Promise<(IUser & Document) | null> {
+  async findByEmail(email: string): Promise<(IUser) | null> {
     return User.findOne({ email }).exec();
   }
 
@@ -36,7 +35,7 @@ export class UserDAO {
    * @param id - The MongoDB ObjectId of the user.
    * @returns Promise resolving to the user document or null if not found.
    */
-  async findById(id: string): Promise<(IUser & Document) | null> {
+  async findById(id: string): Promise<(IUser) | null> {
     return User.findById(id).exec();
   }
 
@@ -48,7 +47,7 @@ export class UserDAO {
    * @returns Promise resolving to the updated user document or null if not found.
    * @throws Will throw validation errors if updated data doesn't match schema requirements.
    */
-  async update(id: string, data: Partial<IUser>): Promise<(IUser & Document) | null> {
+  async update(id: string, data: Partial<IUser>): Promise<(IUser) | null> {
     return User.findByIdAndUpdate(id, data, { new: true, runValidators: true }).exec();
   }
 
@@ -58,7 +57,7 @@ export class UserDAO {
    * @param id - The MongoDB ObjectId of the user to delete.
    * @returns Promise resolving to the deleted user document or null if not found.
    */
-  async delete(id: string): Promise<(IUser & Document) | null> {
+  async delete(id: string): Promise<(IUser) | null> {
     return User.findByIdAndDelete(id).exec();
   }
 
@@ -70,8 +69,8 @@ export class UserDAO {
    * @param token - The reset password token to search for.
    * @returns Promise resolving to the user document or null if not found or token expired.
    */
-  async findByResetToken(token: string): Promise<(IUser & Document) | null> {
-    return User.findOne({ 
+  async findByResetToken(token: string): Promise<(IUser) | null> {
+    return User.findOne({
       resetPasswordToken: token,
       resetPasswordExpires: { $gt: new Date() }
     }).exec();
@@ -85,10 +84,10 @@ export class UserDAO {
    * @param expiresAt - The date when the token should expire.
    * @returns Promise resolving to the updated user document or null if user not found.
    */
-  async setResetToken(email: string, token: string, expiresAt: Date): Promise<(IUser & Document) | null> {
+  async setResetToken(email: string, token: string, expiresAt: Date): Promise<(IUser) | null> {
     return User.findOneAndUpdate(
       { email },
-      { 
+      {
         resetPasswordToken: token,
         resetPasswordExpires: expiresAt
       },
@@ -102,11 +101,11 @@ export class UserDAO {
    * @param userId - The MongoDB ObjectId of the user to clear the token for.
    * @returns Promise resolving to the updated user document or null if not found.
    */
-  async clearResetToken(userId: string): Promise<(IUser & Document) | null> {
+  async clearResetToken(userId: string): Promise<(IUser) | null> {
     return User.findByIdAndUpdate(
       userId,
-      { 
-        $unset: { 
+      {
+        $unset: {
           resetPasswordToken: 1,
           resetPasswordExpires: 1
         }
