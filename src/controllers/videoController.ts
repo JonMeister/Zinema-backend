@@ -15,27 +15,70 @@ export interface AuthenticatedRequest extends Request {
  */
 export class VideoController {
   /**
-   * Retrieves a paginated list of popular videos from Pexels.
+   * Retrieves a paginated list of featured videos from Pexels.
+   * Uses different featured categories to get curated content.
    *
    * Requires a valid JWT token (decoded via authentication middleware).
    *
    * @param req - Authenticated request containing `req.params.page`.
    * @param res - Express response returning the video data or an error.
-   * @returns JSON object containing popular videos with metadata.
+   * @returns JSON object containing featured videos with metadata.
    */
   async getVideos(req: AuthenticatedRequest, res: Response) {
     try {
       const client = createClient(process.env.PEXELS_API_KEY as string);
       const page = Number(req.params.page);
 
-      const data = await client.videos.popular({ per_page: 3, page: page });
+      // Get popular videos (reduced to 5 per page)
+      const popularVideos = await client.videos.popular({ per_page: 5, page: page });
 
-      res.status(200).json(data);
+      // Return in the same format as Pexels API
+      res.status(200).json({
+        page: page,
+        per_page: 5,
+        total_results: (popularVideos as any).total_results || 0,
+        url: (popularVideos as any).url || '',
+        videos: (popularVideos as any).videos || []
+      });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
         console.error("Get videos error: " + err.message);
       }
       res.status(500).json({ message: "No se pudo cargar el catálogo" });
+    }
+  }
+
+  /**
+   * Retrieves featured videos from Pexels curated collections.
+   * Gets videos from Pexels' featured/editorial sections.
+   *
+   * Requires a valid JWT token.
+   *
+   * @param req - Authenticated request containing `req.params.page`.
+   * @param res - Express response returning featured videos or an error.
+   * @returns JSON object containing featured videos with metadata.
+   */
+  async getFeaturedVideos(req: AuthenticatedRequest, res: Response) {
+    try {
+      const client = createClient(process.env.PEXELS_API_KEY as string);
+      const page = Number(req.params.page);
+
+      // Get featured videos from popular videos (reduced to 5 per page)
+      const featuredVideos = await client.videos.popular({ per_page: 5, page: page });
+
+      // Return in the same format as Pexels API
+      res.status(200).json({
+        page: page,
+        per_page: 5,
+        total_results: (featuredVideos as any).total_results || 0,
+        url: (featuredVideos as any).url || '',
+        videos: (featuredVideos as any).videos || []
+      });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Get featured videos error: " + err.message);
+      }
+      res.status(500).json({ message: "No se pudo cargar los videos destacados" });
     }
   }
 
@@ -54,7 +97,7 @@ export class VideoController {
       const title = req.params.title;
       const page = Number(req.params.page);
 
-      const data = await client.videos.search({ query: title, per_page: 3, page: page });
+      const data = await client.videos.search({ query: title, per_page: 20, page: page });
 
       res.status(200).json(data);
     } catch (err: any) {
