@@ -6,12 +6,21 @@ const router = Router();
 
 /**
  * @route GET /api/videos/page/:page
- * @description Get a paginated list of popular videos.
+ * @description Get a paginated list of featured videos from multiple categories.
  * @header {string} Authorization - Bearer token for authentication.
  * @param {number} page - Page number for pagination.
  * @access Private
  */
 router.get("/page/:page", authenticateToken, (req, res) => videoController.getVideos(req, res));
+
+/**
+ * @route GET /api/videos/featured/:page
+ * @description Get featured videos from Pexels curated collections.
+ * @header {string} Authorization - Bearer token for authentication.
+ * @param {number} page - Page number for pagination.
+ * @access Private
+ */
+router.get("/featured/:page", authenticateToken, (req, res) => videoController.getFeaturedVideos(req, res));
 
 /**
  * @route GET /api/videos/info/title/:title/page/:page
