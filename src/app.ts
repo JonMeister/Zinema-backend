@@ -10,6 +10,10 @@ import cors from "cors";
 import routes from "./routes/routes";
 import { connectDB } from "./config/database";
 
+/**
+ * Middleware configuration
+ */
+
 // Load environment variables from .env file
 dotenv.config();
 
