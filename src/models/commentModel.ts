@@ -8,9 +8,9 @@ export interface IComment {
 
 const CommentSchema = new mongoose.Schema<IComment>(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, required: true, trim: true },
-    videoId: { type: String, required: true, trim: true },
-    content: { type: String, required: true, trim: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+    videoId: { type: String, required: true },
+    content: { type: String, required: true },
   },
   {
     timestamps: true,

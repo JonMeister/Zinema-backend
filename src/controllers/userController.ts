@@ -187,17 +187,30 @@ export class UserController {
         return;
       }
 
-      if (password && password !== confirmPassword) {
-        res.status(400).json({ message: "Las contraseñas no coinciden" });
-        return;
+      if (password) {
+        if (password !== confirmPassword) {
+          res.status(400).json({ message: "Las contraseñas no coinciden" });
+          return;
+        }
+        if (!PASSWORD_REGEX.test(password)) {
+          res.status(400).json({
+            message:
+              "La contraseña debe contener al menos 8 caracteres, 1 minúscula, 1 mayúscula y 1 caracter especial",
+          });
+          return;
+        }
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
+        await this.dao.update(userId, { ...req.body, password: hashedPassword });
+      } else {
+        await this.dao.update(userId, req.body);
       }
 
-      await this.dao.update(userId, req.body);
-
-      res.status(200).json({ message: "Perfil actualizado exitosamente" });
+      res.status(200).json({ message: "Perfil exitosamente actualizado" });
     } catch (err: any) {
       if (err.code === 11000) {
-        res.status(409).json({ message: "El correo ya existe" });
+        res.status(409).json({ message: "Email ya registrado" });
       } else if (err.name === "ValidationError") {
         res.status(400).json({ message: err.message });
       } else {
@@ -264,11 +277,11 @@ export class UserController {
 
     try {
       const user = await this.dao.findByEmail(email);
-      
+
       // Always return success to prevent email enumeration attacks
       if (!user) {
-        res.status(200).json({ 
-          message: "Si el correo existe, se ha enviado un enlace de recuperación" 
+        res.status(200).json({
+          message: "Si el correo existe, se ha enviado un enlace de recuperación"
         });
         return;
       }
@@ -286,8 +299,8 @@ export class UserController {
       // Send email
       await emailService.sendRecoveryEmail(email, resetLink);
 
-      res.status(200).json({ 
-        message: "Si el correo existe, se ha enviado un enlace de recuperación" 
+      res.status(200).json({
+        message: "Si el correo existe, se ha enviado un enlace de recuperación"
       });
 
     } catch (err: any) {
@@ -330,7 +343,7 @@ export class UserController {
     try {
       // Find user by token
       const user = await this.dao.findByResetToken(token);
-      
+
       if (!user) {
         res.status(400).json({ message: "Token de recuperación inválido o expirado" });
         return;
