@@ -29,13 +29,13 @@ export class VideoController {
       const client = createClient(process.env.PEXELS_API_KEY as string);
       const page = Number(req.params.page);
 
-      // Get popular videos (reduced to 5 per page)
-      const popularVideos = await client.videos.popular({ per_page: 5, page: page });
+      // Get popular videos (10 per page)
+      const popularVideos = await client.videos.popular({ per_page: 10, page: page });
 
       // Return in the same format as Pexels API
       res.status(200).json({
         page: page,
-        per_page: 5,
+        per_page: 10,
         total_results: (popularVideos as any).total_results || 0,
         url: (popularVideos as any).url || '',
         videos: (popularVideos as any).videos || []
@@ -63,13 +63,13 @@ export class VideoController {
       const client = createClient(process.env.PEXELS_API_KEY as string);
       const page = Number(req.params.page);
 
-      // Get featured videos from popular videos (reduced to 5 per page)
-      const featuredVideos = await client.videos.popular({ per_page: 5, page: page });
+      // Get featured videos from popular videos (10 per page)
+      const featuredVideos = await client.videos.popular({ per_page: 10, page: page });
 
       // Return in the same format as Pexels API
       res.status(200).json({
         page: page,
-        per_page: 5,
+        per_page: 10,
         total_results: (featuredVideos as any).total_results || 0,
         url: (featuredVideos as any).url || '',
         videos: (featuredVideos as any).videos || []

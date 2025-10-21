@@ -1,115 +1,166 @@
-import { Request, Response } from "express";
-import { favoriteDAO } from "../dao/favoriteDAO";
+import { Response } from "express";
+import { Favorite } from "../models/favoriteModel";
+import { AuthenticatedRequest } from "./videoController";
+import { createClient } from "pexels";
 
 /**
- * Extends the standard Express `Request` type to include user information
- * extracted from a verified JWT token.
- */
-export interface AuthenticatedRequest extends Request {
-  user?: { id: string; email: string };
-}
-
-/**
- * Controller responsible for managing user favorites.
- *
- * Handles creation, retrieval, and deletion of favorite videos
- * for authenticated users.
+ * Controller responsible for managing user favorite videos.
+ * Handles adding, removing, and retrieving favorite videos with their details from Pexels.
  */
 export class FavoriteController {
   /**
-   * Marks a video as a favorite for the authenticated user.
-   *
-   * Validates that both `userId` and `videoId` are provided.
-   * If the favorite already exists, a 409 conflict is returned.
-   *
-   * @param req - Authenticated request containing `videoId` in the body and `req.user.id` from the token.
-   * @param res - Express response used to send success or error messages.
-   * @returns A JSON object containing the new favorite's ID if successful.
+   * Add a video to user's favorites.
+   * 
+   * @param req - Authenticated request containing user info and videoId in body
+   * @param res - Express response
    */
-  async create(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async addFavorite(req: AuthenticatedRequest, res: Response) {
     try {
+      const userId = req.user?.id;
       const { videoId } = req.body;
-      const userId = req.user!.id;
 
-      if (!userId || !videoId) {
-        res.status(400).json({ message: "Todos los campos son requeridos" });
-        return;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      const favorite = await favoriteDAO.create({ userId, videoId });
+      if (!videoId) {
+        return res.status(400).json({ message: "videoId es requerido" });
+      }
 
-      res.status(200).json({ favoriteId: favorite._id });
-    } catch (err: any) {
-      if (err.code === 11000) {
-        res.status(409).json({ message: "Video ya marcado como favorito" });
-      } else if (err.name === "ValidationError") {
-        res.status(400).json({ message: err.message });
-      } else {
-        if (process.env.NODE_ENV === "development") {
-          console.log("Create favorite error:", err.message);
+      // Check if already exists
+      const existingFavorite = await Favorite.findOne({ userId, videoId });
+      if (existingFavorite) {
+        return res.status(400).json({ message: "Video ya está en favoritos" });
+      }
+
+      // Create new favorite
+      const favorite = new Favorite({ userId, videoId });
+      await favorite.save();
+
+      res.status(201).json({ 
+        message: "Video agregado a favoritos",
+        favorite: {
+          id: favorite._id,
+          videoId: favorite.videoId,
+          createdAt: favorite.createdAt
         }
-        res.status(500).json({ message: "Error interno del servidor" });
+      });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Add favorite error: " + err.message);
       }
+      res.status(500).json({ message: "Error al agregar a favoritos" });
     }
   }
 
   /**
-   * Retrieves all videos marked as favorites by the authenticated user.
-   *
-   * Uses the user ID from the verified token to query the database.
-   *
-   * @param req - Authenticated request containing `req.user.id`.
-   * @param res - Express response used to return the list of favorites.
-   * @returns An array of favorite documents belonging to the user.
+   * Remove a video from user's favorites.
+   * 
+   * @param req - Authenticated request containing user info and videoId in params
+   * @param res - Express response
    */
-  async getFavorites(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async removeFavorite(req: AuthenticatedRequest, res: Response) {
     try {
-      const userId = req.user!.id;
+      const userId = req.user?.id;
+      const { videoId } = req.params;
 
-      const data = await favoriteDAO.findByUserId(userId);
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
 
-      res.status(200).json(data);
+      const result = await Favorite.findOneAndDelete({ userId, videoId });
+
+      if (!result) {
+        return res.status(404).json({ message: "Favorito no encontrado" });
+      }
+
+      res.status(200).json({ message: "Video eliminado de favoritos" });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Get favorites error:", err.message);
+        console.error("Remove favorite error: " + err.message);
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({ message: "Error al eliminar de favoritos" });
     }
   }
 
   /**
-   * Removes a video from the authenticated user's favorites.
-   *
-   * Verifies that the favorite exists before attempting deletion.
-   * If no favorite is found, returns a 404 error.
-   *
-   * @param req - Authenticated request containing `videoId` in the body.
-   * @param res - Express response confirming deletion or returning an error.
-   * @returns A confirmation message upon successful deletion.
+   * Get all favorite videos for the authenticated user with their full details from Pexels.
+   * 
+   * @param req - Authenticated request containing user info
+   * @param res - Express response returning favorite videos with Pexels data
    */
-  async delete(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getFavorites(req: AuthenticatedRequest, res: Response) {
     try {
-      const { videoId } = req.body;
-      const userId = req.user!.id;
+      const userId = req.user?.id;
 
-      const favorite = await favoriteDAO.findByVideoAndUser(videoId, userId);
-
-      if (!favorite) {
-        res.status(404).json({ message: "El video no ha sido marcado como favorito" });
-        return;
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      await favoriteDAO.delete(favorite._id.toString());
+      // Get all favorite video IDs for this user
+      const favorites = await Favorite.find({ userId }).sort({ createdAt: -1 });
 
-      res.status(200).json({ message: "Video quitado de favoritos" });
+      if (favorites.length === 0) {
+        return res.status(200).json({ videos: [], count: 0 });
+      }
+
+      // Fetch video details from Pexels API using existing getVideoInfoId logic
+      const client = createClient(process.env.PEXELS_API_KEY as string);
+      const videoDetailsPromises = favorites.map(async (fav) => {
+        try {
+          const videoData = await client.videos.show({ id: fav.videoId });
+          return videoData;
+        } catch (error) {
+          console.error(`Error fetching video ${fav.videoId}:`, error);
+          return null;
+        }
+      });
+
+      const videoDetails = await Promise.all(videoDetailsPromises);
+      
+      // Filter out any null values (videos that couldn't be fetched)
+      const validVideos = videoDetails.filter(video => video !== null);
+
+      res.status(200).json({
+        videos: validVideos,
+        count: validVideos.length
+      });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
-        console.log("Delete favorite error:", err.message);
+        console.error("Get favorites error: " + err.message);
       }
-      res.status(500).json({ message: "Error interno del servidor" });
+      res.status(500).json({ message: "Error al obtener favoritos" });
+    }
+  }
+
+  /**
+   * Check if a video is in user's favorites.
+   * 
+   * @param req - Authenticated request containing user info and videoId in params
+   * @param res - Express response with isFavorite boolean
+   */
+  async checkFavorite(req: AuthenticatedRequest, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { videoId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ message: "Usuario no autenticado" });
+      }
+
+      const favorite = await Favorite.findOne({ userId, videoId });
+
+      res.status(200).json({ isFavorite: !!favorite });
+    } catch (err: any) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("Check favorite error: " + err.message);
+      }
+      res.status(500).json({ message: "Error al verificar favorito" });
     }
   }
 }
 
-/** Singleton instance of the FavoriteController. */
+/** 
+ * Singleton instance of the FavoriteController. 
+ */
 export const favoriteController = new FavoriteController();

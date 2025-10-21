@@ -33,6 +33,17 @@ router.use("/videos", videoRoutes);
 router.use("/favorites", favoriteRoutes);
 
 /**
+ * Mount favorite-related routes under /favorites prefix.
+ * 
+ * All favorite endpoints will be accessible at /api/favorites/*:
+ * - POST /api/favorites - Add video to favorites
+ * - DELETE /api/favorites/:videoId - Remove video from favorites
+ * - GET /api/favorites - Get all user favorites with Pexels data
+ * - GET /api/favorites/check/:videoId - Check if video is favorited
+ */
+router.use("/favorites", favoriteRoutes);
+
+/**
  * Export the main router instance.
  * 
  * This router is imported in `app.ts` and mounted under `/api/`,

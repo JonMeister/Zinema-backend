@@ -11,6 +11,8 @@ export interface IFavorite extends Document {
   _id: Types.ObjectId;
   userId: Types.ObjectId | string;
   videoId: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /**
