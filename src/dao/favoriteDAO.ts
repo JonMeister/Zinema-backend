@@ -1,4 +1,3 @@
-import { Document } from "mongoose";
 import { Favorite, IFavorite } from "../models/favoriteModel";
 
 /**

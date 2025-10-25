@@ -24,7 +24,7 @@ export class FavoriteController {
       }
 
       if (!videoId) {
-        return res.status(400).json({ message: "videoId es requerido" });
+        return res.status(400).json({ message: "Un id de video es requerida" });
       }
 
       // Check if already exists
@@ -37,7 +37,7 @@ export class FavoriteController {
       const favorite = new Favorite({ userId, videoId });
       await favorite.save();
 
-      res.status(201).json({ 
+      res.status(201).json({
         message: "Video agregado a favoritos",
         favorite: {
           id: favorite._id,
@@ -117,7 +117,7 @@ export class FavoriteController {
       });
 
       const videoDetails = await Promise.all(videoDetailsPromises);
-      
+
       // Filter out any null values (videos that couldn't be fetched)
       const validVideos = videoDetails.filter(video => video !== null);
 

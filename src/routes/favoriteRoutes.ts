@@ -39,4 +39,7 @@ router.get("/", authenticateToken, (req, res) => favoriteController.getFavorites
  */
 router.get("/check/:videoId", authenticateToken, (req, res) => favoriteController.checkFavorite(req, res));
 
+/**
+ * Export the router instance to be mounted in the main routes file.
+ */
 export default router;
