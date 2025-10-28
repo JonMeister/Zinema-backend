@@ -5,6 +5,20 @@ import { authenticateToken } from "../utils/auth";
 const router = Router();
 
 /**
+ * @route GET /api/ratings/check/:videoId
+ * @description Check whether the authenticated user has rated a specific video.
+ * Returns the user's rating if it exists.
+ * @header {string} Authorization - Bearer token for authentication.
+ * @param {string} videoId - ID of the video to check.
+ * @access Private
+ * 
+ * NOTE: This route MUST come before /:videoId to avoid route conflicts
+ */
+router.get("/check/:videoId", authenticateToken, (req, res) =>
+  ratingController.checkRating(req, res)
+);
+
+/**
  * @route POST /api/ratings/:videoId
  * @description Create or update a user's rating for a specific video.
  * If the user has already rated the video, the existing rating is updated.
@@ -49,18 +63,6 @@ router.get("/:videoId", authenticateToken, (req, res) =>
  */
 router.put("/:ratingId", authenticateToken, (req, res) =>
   ratingController.updateRating(req, res)
-);
-
-/**
- * @route GET /api/ratings/check/:videoId
- * @description Check whether the authenticated user has rated a specific video.
- * Returns the user's rating if it exists.
- * @header {string} Authorization - Bearer token for authentication.
- * @param {string} videoId - ID of the video to check.
- * @access Private
- */
-router.get("/check/:videoId", authenticateToken, (req, res) =>
-  ratingController.checkRating(req, res)
 );
 
 /**

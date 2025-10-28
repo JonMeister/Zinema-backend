@@ -23,7 +23,7 @@ export interface IRating extends Document {
  * Defines the structure of rating documents in MongoDB,
  * linking users and videos with an associated numerical score.
  * The `stars` field is validated to ensure it falls within
- * an allowed range (0–10). Timestamps are automatically
+ * an allowed range (1–5). Timestamps are automatically
  * generated for creation and updates.
  */
 const RatingSchema = new mongoose.Schema<IRating>(
@@ -33,8 +33,8 @@ const RatingSchema = new mongoose.Schema<IRating>(
     stars: {
       type: Number,
       required: true,
-      min: 0,
-      max: 10,
+      min: 1,
+      max: 5,
     },
   },
   {

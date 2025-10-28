@@ -41,9 +41,16 @@ export class RatingDAO {
   }
 
   /**
-   * Update a comment’s content by its ID.
+   * Find all ratings by video ID.
    */
-  async update(id: string, stars: string): Promise<IRating | null> {
+  async findAllByVideo(videoId: string): Promise<IRating[]> {
+    return Rating.find({ videoId }).exec();
+  }
+
+  /**
+   * Update a rating's stars by its ID.
+   */
+  async update(id: string, stars: number): Promise<IRating | null> {
     return Rating.findByIdAndUpdate(
       id,
       { stars },

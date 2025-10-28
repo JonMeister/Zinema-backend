@@ -33,6 +33,11 @@ export class RatingController {
         return res.status(400).json({ message: "Debe proporcionar un valor" });
       }
 
+      // Validate stars are between 1 and 5
+      if (stars < 1 || stars > 5) {
+        return res.status(400).json({ message: "La calificación debe estar entre 1 y 5 estrellas" });
+      }
+
       const rating = await this.dao.create({ userId, videoId, stars });
 
       res.status(201).json({
@@ -98,15 +103,26 @@ export class RatingController {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      const ratings = await this.dao.findAllByVideoAndUser(videoId, userId);
+      // Get ALL ratings for this video (not just for the current user)
+      const ratings = await this.dao.findAllByVideo(videoId);
 
       if (!ratings || ratings.length === 0) {
         return res.status(200).json({ ratings: [], count: 0 });
       }
 
+      // Transform ratings to include user info
+      const transformedRatings = ratings.map(rating => ({
+        id: rating._id.toString(),
+        userId: rating.userId.toString(),
+        videoId: rating.videoId,
+        stars: rating.stars,
+        createdAt: rating.createdAt?.toISOString() || '',
+        updatedAt: rating.updatedAt?.toISOString() || ''
+      }));
+
       return res.status(200).json({
-        ratings,
-        count: ratings.length
+        ratings: transformedRatings,
+        count: transformedRatings.length
       });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
@@ -140,6 +156,11 @@ export class RatingController {
         return res.status(400).json({ message: "Debe proporcionar un valor para la puntuación" });
       }
 
+      // Validate stars are between 1 and 5
+      if (stars < 1 || stars > 5) {
+        return res.status(400).json({ message: "La calificación debe estar entre 1 y 5 estrellas" });
+      }
+
       const rating = await this.dao.update(ratingId, stars);
 
       if (!rating) {
@@ -166,7 +187,7 @@ export class RatingController {
    * Check if a video has been rated by the authenticated user.
    * 
    * @param req - Authenticated request containing user info and videoId in params
-   * @param res - Express response with isRating boolean
+   * @param res - Express response with isRating boolean and rating data if exists
    */
   async checkRating(req: AuthenticatedRequest, res: Response) {
     try {
@@ -179,7 +200,21 @@ export class RatingController {
 
       const rating = await this.dao.findByVideoAndUser(videoId, userId);
 
-      res.status(200).json({ isRating: !!rating });
+      if (rating) {
+        res.status(200).json({ 
+          isRating: true,
+          rating: {
+            id: rating._id.toString(),
+            userId: rating.userId.toString(),
+            videoId: rating.videoId,
+            stars: rating.stars,
+            createdAt: rating.createdAt?.toISOString() || '',
+            updatedAt: rating.updatedAt?.toISOString() || ''
+          }
+        });
+      } else {
+        res.status(200).json({ isRating: false });
+      }
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
         console.error("Check rating error: " + err.message);
