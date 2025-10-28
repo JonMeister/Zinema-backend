@@ -124,3 +124,88 @@ Authorization: Bearer {{TOKEN}}
 {
   "videoId": "{{VIDEO_ID}}"
 }
+
+
+### 
+
+POST {{BASE_URL}}/comments/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "content": "Holaaaa"
+}
+
+
+### 
+
+GET {{BASE_URL}}/comments/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+> {%
+  client.global.set("COMMENT_ID", response.body[0]._id);
+  console.log(client.global.get("COMMENT_ID)"));
+%}
+
+
+### 
+
+PUT {{BASE_URL}}/comments/{{COMMENT_ID}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "content": "Holaxd"
+}
+
+
+### 
+
+DELETE {{BASE_URL}}/comments/{{COMMENT_ID}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+
+### 
+
+POST {{BASE_URL}}/ratings/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "stars": 5
+}
+
+
+### 
+
+GET {{BASE_URL}}/ratings/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+> {%
+  client.global.set("RATING_ID", response.body[0]._id);
+  console.log(client.global.get("RATING_ID"));
+%}
+
+
+### 
+
+PUT {{BASE_URL}}/ratings/{{RATING_ID}} HTTP/1.1
+Accept: application/json
+Content-Type: application/json
+Authorization: Bearer {{TOKEN}}
+
+{
+  "stars": 6
+}
+
+
+### 
+
+DELETE {{BASE_URL}}/ratings/{{VIDEO_ID}} HTTP/1.1
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
