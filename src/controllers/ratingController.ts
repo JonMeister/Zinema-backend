@@ -103,15 +103,26 @@ export class RatingController {
         return res.status(401).json({ message: "Usuario no autenticado" });
       }
 
-      const ratings = await this.dao.findAllByVideoAndUser(videoId, userId);
+      // Get ALL ratings for this video (not just for the current user)
+      const ratings = await this.dao.findAllByVideo(videoId);
 
       if (!ratings || ratings.length === 0) {
         return res.status(200).json({ ratings: [], count: 0 });
       }
 
+      // Transform ratings to include user info
+      const transformedRatings = ratings.map(rating => ({
+        id: rating._id.toString(),
+        userId: rating.userId.toString(),
+        videoId: rating.videoId,
+        stars: rating.stars,
+        createdAt: rating.createdAt?.toISOString() || '',
+        updatedAt: rating.updatedAt?.toISOString() || ''
+      }));
+
       return res.status(200).json({
-        ratings,
-        count: ratings.length
+        ratings: transformedRatings,
+        count: transformedRatings.length
       });
     } catch (err: any) {
       if (process.env.NODE_ENV === "development") {
