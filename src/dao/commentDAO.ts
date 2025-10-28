@@ -2,10 +2,14 @@ import { Comment, IComment } from "../models/commentModel";
 
 /**
  * Data Access Object (DAO) for the Comment model.
+ * Provides methods for creating, reading, updating, and deleting video comments.
  */
 export class CommentDAO {
   /**
-   * Create a new comment.
+   * Creates a new comment in the database.
+   * 
+   * @param data - Partial comment data to create the comment with.
+   * @returns Promise resolving to the created comment document.
    */
   async create(data: Partial<IComment>): Promise<IComment> {
     const comment = new Comment(data);
@@ -13,42 +17,76 @@ export class CommentDAO {
   }
 
   /**
-   * Delete a comment by ID.
+   * Deletes a comment by its unique ID.
+   * 
+   * @param id - The MongoDB ObjectId of the comment to delete.
+   * @returns Promise resolving to the deleted comment or null if not found.
    */
   async delete(id: string): Promise<(IComment) | null> {
     return Comment.findByIdAndDelete(id).exec();
   }
 
   /**
-  * Find all comments by user ID.
-  */
+   * Retrieves all comments made by a specific user.
+   * 
+   * @param userId - The ID of the user whose comments to retrieve.
+   * @returns Promise resolving to an array of comment documents.
+   */
   async findByUserId(userId: string): Promise<(IComment)[]> {
     return Comment.find({ userId }).exec();
   }
 
   /**
-  * Find a comment by its _id.
-  */
+   * Retrieves a comment by its unique ID.
+   * 
+   * @param id - The MongoDB ObjectId of the comment.
+   * @returns Promise resolving to the comment document or null if not found.
+   */
   async findById(id: string): Promise<IComment | null> {
     return Comment.findById(id).exec();
   }
 
   /**
-   * Find all comments by video ID and user ID.
+   * Retrieves all comments made by a specific user on a specific video.
+   * 
+   * @param videoId - The ID of the video.
+   * @param userId - The ID of the user.
+   * @returns Promise resolving to an array of comment documents.
    */
   async findAllByVideoAndUser(videoId: string, userId: string): Promise<IComment[]> {
     return Comment.find({ videoId, userId }).exec();
   }
 
   /**
-   * Find a single comment by video ID and user ID.
+   * Retrieves a comment made by a specific user on a specific video.
+   * Populates the userId field with the user's firstName for display purposes.
+   * 
+   * @param videoId - The ID of the video to check.
+   * @param userId - The ID of the user to check.
+   * @returns The comment object with populated user data if found, or null otherwise.
    */
   async findByVideoAndUser(videoId: string, userId: string): Promise<IComment | null> {
-    return Comment.findOne({ videoId, userId }).exec();
+    return Comment.findOne({ videoId, userId }).populate('userId', 'firstName').exec();
   }
 
   /**
-   * Update a comment’s content by its ID.
+   * Retrieves all comments made for a specific video.
+   * Populates the userId field with the user's firstName for each comment.
+   * This allows displaying the commenter's name without additional queries.
+   * 
+   * @param videoId - The ID of the video to retrieve comments for.
+   * @returns Array of comment objects with populated user data (firstName).
+   */
+  async findAllByVideo(videoId: string): Promise<IComment[]> {
+    return Comment.find({ videoId }).populate('userId', 'firstName').exec();
+  }
+
+  /**
+   * Updates a comment's content by its ID.
+   * 
+   * @param id - The MongoDB ObjectId of the comment to update.
+   * @param content - The new content text for the comment.
+   * @returns Promise resolving to the updated comment document or null if not found.
    */
   async update(id: string, content: string): Promise<IComment | null> {
     return Comment.findByIdAndUpdate(
