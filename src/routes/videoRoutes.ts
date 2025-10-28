@@ -15,12 +15,12 @@ router.get("/page/:page", authenticateToken, (req, res) => videoController.getVi
 
 /**
  * @route GET /api/videos/featured/:page
- * @description Get featured videos from Pexels curated collections.
+ * @description Get featured videos from Pexels (same as popular videos).
  * @header {string} Authorization - Bearer token for authentication.
  * @param {number} page - Page number for pagination.
  * @access Private
  */
-router.get("/featured/:page", authenticateToken, (req, res) => videoController.getFeaturedVideos(req, res));
+router.get("/featured/:page", authenticateToken, (req, res) => videoController.getVideos(req, res));
 
 /**
  * @route GET /api/videos/info/title/:title/page/:page
